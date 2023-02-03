@@ -1,12 +1,18 @@
 package cn.dxr.quake;
 
+import cn.dxr.quake.Utils.DistanceUtil;
 import cn.dxr.quake.Utils.HttpUtil;
 import cn.dxr.quake.Utils.SoundUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.io.FileUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,8 +23,8 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.1");
-        jFrame.setSize(330, 260);
+        JFrame jFrame = new JFrame("地震预警 v1.2");
+        jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         jFrame.setVisible(true);
@@ -46,6 +52,23 @@ public class MainWindow {
         label8.setFont(font);
         JLabel label7 = new JLabel();
         label7.setFont(font);
+        JLabel label9 = new JLabel();
+        label9.setFont(font);
+        JLabel label10 = new JLabel();
+        label10.setFont(font);
+        JLabel label11 = new JLabel();
+        label11.setFont(font);
+        jPanel.setBackground(new Color(37, 42, 37, 255));
+        label.setForeground(Color.white);
+        label2.setForeground(Color.white);
+        label3.setForeground(Color.white);
+        label5.setForeground(Color.white);
+        label6.setForeground(Color.white);
+        label7.setForeground(Color.white);
+        label8.setForeground(Color.white);
+        label9.setForeground(Color.white);
+        label10.setForeground(Color.white);
+        label11.setForeground(Color.white);
         // 将控件添加至窗口
         jPanel.add(label);
         jPanel.add(label2);
@@ -53,41 +76,12 @@ public class MainWindow {
         jPanel.add(label5);
         jPanel.add(label6);
         jPanel.add(label8);
+        jPanel.add(label10);
+        jPanel.add(label9);
+        jPanel.add(label11);
         jPanel.add(label7);
         jFrame.add(jPanel);
 
-        // 创建一个内部类用于控制程序背景色
-        class BackgroundManager extends Thread {
-
-            int times = 0;
-
-            @Override
-            public void run() {
-                while (true) {
-                    ++times;
-                    label.setForeground(Color.white);
-                    label2.setForeground(Color.white);
-                    label3.setForeground(Color.white);
-                    label5.setForeground(Color.white);
-                    label6.setForeground(Color.white);
-                    label7.setForeground(Color.white);
-                    label8.setForeground(Color.white);
-                    jPanel.setBackground(new Color(128, 16, 16, 255));
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (times == 25) {
-                        jPanel.setBackground(new Color(37, 42, 37, 255));
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 实例化背景控制类
-        BackgroundManager background = new BackgroundManager();
         // 实例化声音播放类
         SoundUtil soundUtil = new SoundUtil();
 
@@ -95,18 +89,65 @@ public class MainWindow {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
+                File path = new File("settings.json");
                 try {
+                    String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
                     JSONObject json = JSON.parseObject(url);
+                    double epicenterLat = json.getDouble("Latitude");
+                    double epicenterLng = json.getDouble("Longitude");
+                    DecimalFormat decimalFormat = new DecimalFormat("0.0");
+                    try {
+                        String file = FileUtils.readFileToString(path);
+                        JSONObject jsonObject = JSON.parseObject(file);
+                        double userLat = jsonObject.getDouble("Lat");
+                        double userlng = jsonObject.getDouble("Lng");
+                        String distance = decimalFormat.format(DistanceUtil.getDistance(userLat, userlng, epicenterLat, epicenterLng));
+                        double local = 0.92 + 1.63 * json.getDouble("Magunitude") - 3.49 * Math.log10(Double.parseDouble(distance));
+                        String localInt = decimalFormat.format(local);
+                        if (local < 0) {
+                            localInt = "0.0";
+                        }
+                        String feel = "";
+                        if (local < 1) {
+                            feel = "无震感";
+                        }
+                        if (local >= 1 && local < 2) {
+                            feel = "震感轻微";
+                        }
+                        if (local >= 2 && local < 3) {
+                            feel = "高楼层有感";
+                        }
+                        if (local >= 3 && local < 4) {
+                            feel = "震感较强";
+                        }
+                        if (local >= 4 && local < 5) {
+                            feel = "震感强烈";
+                        }
+                        if (local >= 5) {
+                            feel = "震感极强";
+                        }
+                        label10.setText("本地烈度: " + localInt + "度" + " " + feel);
+                        label9.setText("震中距: " + distance + "KM");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    String file = FileUtils.readFileToString(path);
+                    JSONObject jsonObject = JSON.parseObject(file);
+                    double userLat = jsonObject.getDouble("Lat");
+                    double userlng = jsonObject.getDouble("Lng");
+                    int time = (int) DistanceUtil.getTime(userLat, userlng, epicenterLat, epicenterLng);
                     label.setText("  地震预警  ");
                     label2.setText("  " + json.getString("HypoCenter") + "  M" + json.getString("Magunitude"));
                     label3.setText("    震源深度: " + "10KM    ");
                     label6.setText("发震时刻: " + json.getString("OriginTime"));
                     label8.setText("最大烈度: " + json.getString("MaxIntensity") + "度");
+                    label11.setText("地震横波到达预计需要" + time + "秒");
                     if (!Objects.equals(json.getString("ID"), EventID)) {
-                        background.start();
+                        jPanel.setBackground(new Color(128, 16, 16, 255));
                         soundUtil.playSound("sounds\\First.wav");
                         EventID = json.getString("ID");
+                    } else {
+                        jPanel.setBackground(new Color(37, 42, 37, 255));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -114,17 +155,18 @@ public class MainWindow {
             }
         };
         // 每3秒向api接口发送一次请求
-        new Timer().schedule(timerTask,0L,3000L);
-
+        new Timer().schedule(timerTask,0L,5000L);
         // 创建另一个定时任务用于获取当前时间
         TimerTask timerTask1 = new TimerTask() {
             @Override
             public void run() {
-                String url = HttpUtil.sendGet("https://api.wolfx.jp", "/ntp.json?");
+                String url = HttpUtil.sendGet("https://api.pinduoduo.com", "/api/server/_stm");
                 try {
                     JSONObject jsonObject = JSON.parseObject(url);
-                    JSONObject json = jsonObject.getJSONObject("CST");
-                    label7.setText(json.getString("str"));
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Long time = new Long(jsonObject.getString("server_time"));
+                    String date = simpleDateFormat.format(time);
+                    label7.setText(date);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

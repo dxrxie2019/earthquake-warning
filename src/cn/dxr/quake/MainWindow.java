@@ -23,7 +23,7 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.2");
+        JFrame jFrame = new JFrame("地震预警 v1.2.1");
         jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -101,7 +101,7 @@ public class MainWindow {
                         JSONObject jsonObject = JSON.parseObject(file);
                         double userLat = jsonObject.getDouble("Lat");
                         double userlng = jsonObject.getDouble("Lng");
-                        String distance = decimalFormat.format(DistanceUtil.getDistance(userLat, userlng, epicenterLat, epicenterLng));
+                        String distance = decimalFormat.format(DistanceUtil.getDistance(userlng, userLat, epicenterLng, epicenterLat));
                         double local = 0.92 + 1.63 * json.getDouble("Magunitude") - 3.49 * Math.log10(Double.parseDouble(distance));
                         String localInt = decimalFormat.format(local);
                         if (local < 0) {
@@ -127,7 +127,7 @@ public class MainWindow {
                             feel = "震感极强";
                         }
                         label10.setText("本地烈度: " + localInt + "度" + " " + feel);
-                        label9.setText("震中距: " + distance + "KM");
+                        label9.setText("震中距: 约" + distance + "KM");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -135,13 +135,13 @@ public class MainWindow {
                     JSONObject jsonObject = JSON.parseObject(file);
                     double userLat = jsonObject.getDouble("Lat");
                     double userlng = jsonObject.getDouble("Lng");
-                    int time = (int) DistanceUtil.getTime(userLat, userlng, epicenterLat, epicenterLng);
+                    int time = (int) DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
                     label.setText("  地震预警  ");
                     label2.setText("  " + json.getString("HypoCenter") + "  M" + json.getString("Magunitude"));
                     label3.setText("    震源深度: " + "10KM    ");
                     label6.setText("发震时刻: " + json.getString("OriginTime"));
                     label8.setText("最大烈度: " + json.getString("MaxIntensity") + "度");
-                    label11.setText("地震横波到达预计需要" + time + "秒");
+                    label11.setText("地震横波到达预计需要约" + time + "秒");
                     if (!Objects.equals(json.getString("ID"), EventID)) {
                         jPanel.setBackground(new Color(128, 16, 16, 255));
                         soundUtil.playSound("sounds\\First.wav");
@@ -154,7 +154,7 @@ public class MainWindow {
                 }
             }
         };
-        // 每3秒向api接口发送一次请求
+        // 每5秒向api接口发送一次请求
         new Timer().schedule(timerTask,0L,5000L);
         // 创建另一个定时任务用于获取当前时间
         TimerTask timerTask1 = new TimerTask() {

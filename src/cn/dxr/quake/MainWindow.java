@@ -3,6 +3,7 @@ package cn.dxr.quake;
 import cn.dxr.quake.Utils.DistanceUtil;
 import cn.dxr.quake.Utils.HttpUtil;
 import cn.dxr.quake.Utils.SoundUtil;
+import cn.dxr.quake.app.VersionChecker;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FileUtils;
@@ -23,7 +24,7 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.2.1");
+        JFrame jFrame = new JFrame("地震预警 v1.2.2");
         jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -81,6 +82,14 @@ public class MainWindow {
         jPanel.add(label11);
         jPanel.add(label7);
         jFrame.add(jPanel);
+
+        // 检查版本
+        VersionChecker versionChecker = new VersionChecker();
+        try {
+            versionChecker.checkVersion();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // 实例化声音播放类
         SoundUtil soundUtil = new SoundUtil();

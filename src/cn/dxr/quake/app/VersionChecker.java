@@ -14,13 +14,13 @@ public class VersionChecker {
 
     // 获取软件当前版本
     private String getVersion() throws IOException {
-        File file = new File("version.json");
+        File file = new File("Files\\version.json");
         String file1 = FileUtils.readFileToString(file);
         JSONObject jsonObject = JSON.parseObject(file1);
         return jsonObject.getString("version");
     }
 
-    // 获取软件最新版本
+    // 获取软件最新版本,并检查版本
     public void checkVersion() throws IOException {
         String url = HttpUtil.sendGet("http://120.48.69.88","/SCEEW/version.json");
         JSONObject jsonObject = JSON.parseObject(url);

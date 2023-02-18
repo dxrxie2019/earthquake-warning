@@ -9,6 +9,8 @@ import org.apache.commons.io.FileUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -23,7 +25,7 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.2.3");
+        JFrame jFrame = new JFrame("地震预警 v1.3.0");
         jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -83,6 +85,25 @@ public class MainWindow {
         jPanel.add(label7);
         jFrame.add(jPanel);
 
+        // 右键菜单
+        JPopupMenu jPopupMenu = new JPopupMenu();
+        JMenuItem jMenuItem = new JMenuItem("退出程序");
+        jMenuItem.addActionListener(e -> System.exit(1));
+        JMenuItem jMenuItem1 = new JMenuItem("设置");
+        jMenuItem1.addActionListener(e -> new SettingsPage());
+        jPopupMenu.add(jMenuItem);
+        jPopupMenu.add(jMenuItem1);
+
+        // 右键菜单事件监听器
+        jFrame.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if(e.getButton() == MouseEvent.BUTTON3) {
+                    jPopupMenu.show(jFrame, e.getX(), e.getY());
+                }
+            }
+        });
+
         // 实例化声音播放类
         SoundUtil soundUtil = new SoundUtil();
 
@@ -90,7 +111,7 @@ public class MainWindow {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                File path = new File("settings.json");
+                File path = new File("Files\\settings.json");
                 File path1 = new File("Files\\start.json");
                 try {
                     String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
@@ -154,6 +175,7 @@ public class MainWindow {
                             for(int i = time; i > -1; i--) {
                                 label11.setText("地震横波将在" + i + "秒后抵达");
                                 if(i == 0) {
+                                    soundUtil.playSound("sounds\\Arrive.wav");
                                     label11.setText("地震横波已抵达");
                                 }
                                 Thread.sleep(1000L);

@@ -25,7 +25,9 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.3.0");
+        JFrame jFrame = new JFrame("地震预警 v1.3.1");
+        Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\icon.png");
+        jFrame.setIconImage(image);
         jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -154,35 +156,20 @@ public class MainWindow {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    String file = FileUtils.readFileToString(path);
                     String file1 = FileUtils.readFileToString(path1);
-                    JSONObject jsonObject = JSON.parseObject(file);
                     JSONObject jsonObject1 = JSON.parseObject(file1);
-                    double userLat = jsonObject.getDouble("Lat");
-                    double userlng = jsonObject.getDouble("Lng");
-                    int time = (int) DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
                     label.setText("  地震预警  ");
                     label2.setText("  " + json.getString("HypoCenter") + "  M" + json.getString("Magunitude"));
                     label3.setText("    震源深度: " + "10KM    ");
                     label6.setText("发震时刻: " + json.getString("OriginTime"));
                     label8.setText("最大烈度: " + json.getString("MaxIntensity") + "度");
-                    label11.setText("地震横波已抵达");
-                    if(!Objects.equals(json.getString("ID"), jsonObject1.getString("ID"))) {
+                    if (!Objects.equals(json.getString("ID"), jsonObject1.getString("ID"))) {
                         if (!Objects.equals(json.getString("ID"), EventID)) {
-                            jPanel.setBackground(new Color(128, 16, 16, 255));
                             soundUtil.playSound("sounds\\First.wav");
-                            // 倒计时
-                            for(int i = time; i > -1; i--) {
-                                label11.setText("地震横波将在" + i + "秒后抵达");
-                                if(i == 0) {
-                                    soundUtil.playSound("sounds\\Arrive.wav");
-                                    label11.setText("地震横波已抵达");
-                                }
-                                Thread.sleep(1000L);
-                            }
+                            jFrame.setAlwaysOnTop(true);
                             EventID = json.getString("ID");
                         } else {
-                            jPanel.setBackground(new Color(37, 42, 37, 255));
+                            jFrame.setAlwaysOnTop(false);
                         }
                     }
                 } catch (Exception e) {
@@ -192,6 +179,7 @@ public class MainWindow {
         };
         // 每3秒向api接口发送一次请求
         new Timer().schedule(timerTask,0L,3000L);
+
         // 创建另一个定时任务用于获取当前时间
         TimerTask timerTask1 = new TimerTask() {
             @Override
@@ -210,5 +198,49 @@ public class MainWindow {
         };
         // 每秒向api接口发送一次请求
         new Timer().schedule(timerTask1,0L,1000L);
+
+        // 再创建一个定时任务用于倒计时
+        TimerTask timerTask2 = new TimerTask() {
+            @Override
+            public void run() {
+                File path = new File("Files\\settings.json");
+                File path1 = new File("Files\\start.json");
+                try {
+                    String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
+                    JSONObject json = JSON.parseObject(url);
+                    String file = FileUtils.readFileToString(path);
+                    JSONObject jsonObject = JSON.parseObject(file);
+                    String file1 = FileUtils.readFileToString(path1);
+                    JSONObject jsonObject1 = JSON.parseObject(file1);
+                    double epicenterLat = json.getDouble("Latitude");
+                    double epicenterLng = json.getDouble("Longitude");
+                    double userLat = jsonObject.getDouble("Lat");
+                    double userlng = jsonObject.getDouble("Lng");
+                    int time = (int) DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
+                    label11.setText("地震横波已抵达");
+                    if (!Objects.equals(json.getString("ID"), jsonObject1.getString("ID"))) {
+                        if (!Objects.equals(json.getString("ID"), EventID)) {
+                            jPanel.setBackground(new Color(128, 16, 16, 255));
+                            // 倒计时
+                            for (int i = time; i > -1; i--) {
+                                label11.setText("地震横波将在" + i + "秒后抵达");
+                                if (i == 0) {
+                                    soundUtil.playSound("sounds\\Arrive.wav");
+                                    label11.setText("地震横波已抵达");
+                                }
+                                Thread.sleep(1000L);
+                            }
+                            EventID = json.getString("ID");
+                        } else {
+                            jPanel.setBackground(new Color(37, 42, 37, 255));
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        // 每3秒向api接口发送一次请求
+        new Timer().schedule(timerTask2,0L,3000L);
     }
 }

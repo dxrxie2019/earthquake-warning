@@ -22,7 +22,7 @@ public class VersionChecker {
 
     // 获取软件最新版本,并检查版本
     public void checkVersion() throws IOException {
-        String url = HttpUtil.sendGet("http://120.48.69.88","/SCEEW/version.json");
+        String url = HttpUtil.sendGet("https://dxrxie2019.github.io","/SCEEW/version.json");
         JSONObject jsonObject = JSON.parseObject(url);
         String latest = jsonObject.getString("latest");
         if(!Objects.equals(latest, getVersion())) {

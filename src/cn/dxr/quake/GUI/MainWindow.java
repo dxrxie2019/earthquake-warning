@@ -25,7 +25,7 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.3.1");
+        JFrame jFrame = new JFrame("地震预警 v1.3.2");
         Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\icon.png");
         jFrame.setIconImage(image);
         jFrame.setSize(330, 330);
@@ -90,17 +90,23 @@ public class MainWindow {
         // 右键菜单
         JPopupMenu jPopupMenu = new JPopupMenu();
         JMenuItem jMenuItem = new JMenuItem("退出程序");
+        jMenuItem.setFont(new Font("微软雅黑",Font.BOLD,12));
         jMenuItem.addActionListener(e -> System.exit(1));
         JMenuItem jMenuItem1 = new JMenuItem("设置");
+        jMenuItem1.setFont(new Font("微软雅黑",Font.BOLD,12));
         jMenuItem1.addActionListener(e -> new SettingsPage());
+        JMenuItem jMenuItem2 = new JMenuItem("关于");
+        jMenuItem2.setFont(new Font("微软雅黑",Font.BOLD,12));
+        jMenuItem2.addActionListener(e -> new AboutPage());
         jPopupMenu.add(jMenuItem);
         jPopupMenu.add(jMenuItem1);
+        jPopupMenu.add(jMenuItem2);
 
         // 右键菜单事件监听器
         jFrame.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if(e.getButton() == MouseEvent.BUTTON3) {
+                if (e.getButton() == MouseEvent.BUTTON3) {
                     jPopupMenu.show(jFrame, e.getX(), e.getY());
                 }
             }
@@ -178,7 +184,7 @@ public class MainWindow {
             }
         };
         // 每3秒向api接口发送一次请求
-        new Timer().schedule(timerTask,0L,3000L);
+        new Timer().schedule(timerTask, 0L, 3000L);
 
         // 创建另一个定时任务用于获取当前时间
         TimerTask timerTask1 = new TimerTask() {
@@ -197,7 +203,7 @@ public class MainWindow {
             }
         };
         // 每秒向api接口发送一次请求
-        new Timer().schedule(timerTask1,0L,1000L);
+        new Timer().schedule(timerTask1, 0L, 1000L);
 
         // 再创建一个定时任务用于倒计时
         TimerTask timerTask2 = new TimerTask() {
@@ -241,6 +247,65 @@ public class MainWindow {
             }
         };
         // 每3秒向api接口发送一次请求
-        new Timer().schedule(timerTask2,0L,3000L);
+        new Timer().schedule(timerTask2, 0L, 3000L);
+    }
+    // 获取横波到达时间
+    public static double getArriveTime() {
+        File path = new File("Files\\settings.json");
+        try {
+            String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
+            JSONObject json = JSON.parseObject(url);
+            String file = FileUtils.readFileToString(path);
+            JSONObject jsonObject = JSON.parseObject(file);
+            double epicenterLat = json.getDouble("Latitude");
+            double epicenterLng = json.getDouble("Longitude");
+            double userLat = jsonObject.getDouble("Lat");
+            double userlng = jsonObject.getDouble("Lng");
+            return DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // 获取震感
+    public static String getFeel() {
+        File path = new File("Files\\settings.json");
+        try {
+            String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
+            JSONObject json = JSON.parseObject(url);
+            String file = FileUtils.readFileToString(path);
+            JSONObject jsonObject = JSON.parseObject(file);
+            DecimalFormat decimalFormat = new DecimalFormat("0.0");
+            double epicenterLat = json.getDouble("Latitude");
+            double epicenterLng = json.getDouble("Longitude");
+            double userLat = jsonObject.getDouble("Lat");
+            double userlng = jsonObject.getDouble("Lng");
+            String distance = decimalFormat.format(DistanceUtil.getDistance(userlng, userLat, epicenterLng, epicenterLat));
+            double local = 0.92 + 1.63 * json.getDouble("Magunitude") - 3.49 * Math.log10(Double.parseDouble(distance));
+            String feel = "";
+            if (local < 1) {
+                feel = "无震感";
+            }
+            if (local >= 1 && local < 2) {
+                feel = "震感轻微";
+            }
+            if (local >= 2 && local < 3) {
+                feel = "高楼层有感";
+            }
+            if (local >= 3 && local < 4) {
+                feel = "震感较强";
+            }
+            if (local >= 4 && local < 5) {
+                feel = "震感强烈";
+            }
+            if (local >= 5) {
+                feel = "震感极强";
+            }
+            return feel;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

@@ -1,5 +1,6 @@
 package cn.dxr.quake.GUI;
 
+import cn.dxr.quake.Utils.SoundUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FileUtils;
@@ -15,6 +16,8 @@ public class SettingsPage {
     public SettingsPage() {
         // 定义设置界面窗口及控件属性
         JFrame jFrame = new JFrame("设置");
+        Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\icon.png");
+        jFrame.setIconImage(image);
         jFrame.setSize(400,300);
         jFrame.setLocationRelativeTo(null);
         jFrame.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
@@ -27,6 +30,9 @@ public class SettingsPage {
         JLabel jLabel = new JLabel();
         JLabel jLabel1 = new JLabel();
         JLabel jLabel2 = new JLabel();
+        JLabel jLabel3 = new JLabel();
+        JLabel jLabel4 = new JLabel();
+        JLabel jLabel5 = new JLabel();
         jLabel.setBounds(0,0,250,50);
         jLabel.setText("-----用户所在地经纬度设置-----");
         jLabel.setForeground(Color.white);
@@ -39,22 +45,47 @@ public class SettingsPage {
         jLabel2.setText("经度");
         jLabel2.setForeground(Color.white);
         jLabel2.setFont(new Font("微软雅黑", Font.BOLD, 15));
+        jLabel3.setBounds(0,70,250,50);
+        jLabel3.setText("-----预警音效试听-----");
+        jLabel3.setForeground(Color.white);
+        jLabel3.setFont(new Font("微软雅黑", Font.BOLD, 15));
+        jLabel4.setBounds(12,110,250,20);
+        jLabel4.setText("地震预警发布时");
+        jLabel4.setForeground(Color.white);
+        jLabel4.setFont(new Font("微软雅黑", Font.BOLD, 15));
+        jLabel5.setBounds(12,140,250,20);
+        jLabel5.setText("地震横波抵达时");
+        jLabel5.setForeground(Color.white);
+        jLabel5.setFont(new Font("微软雅黑", Font.BOLD, 15));
         JEditorPane jEditorPane = new JEditorPane();
         JEditorPane jEditorPane1 = new JEditorPane();
         jEditorPane.setBounds(50,40,100,20);
         jEditorPane1.setBounds(220,40,100,20);
         JButton jButton = new JButton("保存设置");
-        jButton.setBounds(110,100,150,30);
+        JButton jButton1 = new JButton("试听");
+        JButton jButton2 = new JButton("试听");
+        jButton.setBounds(110,220,150,30);
         jButton.setFont(new Font("微软雅黑", Font.BOLD, 15));
         jButton.setFocusPainted(false);
+        jButton1.setBounds(120,110,70,20);
+        jButton1.setFont(new Font("微软雅黑", Font.BOLD, 12));
+        jButton1.setFocusPainted(false);
+        jButton2.setBounds(120,140,70,20);
+        jButton2.setFont(new Font("微软雅黑", Font.BOLD, 12));
+        jButton2.setFocusPainted(false);
         // 将控件添加至窗口
         jFrame.add(jPanel);
         jPanel.add(jLabel);
         jPanel.add(jLabel1);
         jPanel.add(jLabel2);
+        jPanel.add(jLabel3);
+        jPanel.add(jLabel4);
+        jPanel.add(jLabel5);
         jPanel.add(jEditorPane);
         jPanel.add(jEditorPane1);
         jPanel.add(jButton);
+        jPanel.add(jButton1);
+        jPanel.add(jButton2);
         // 设置背景
         jPanel.setBackground(new Color(37, 42, 37, 255));
 
@@ -68,6 +99,13 @@ public class SettingsPage {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // 实例化声音播放类
+        SoundUtil soundUtil = new SoundUtil();
+
+        // 音效播放
+        jButton1.addActionListener(e -> soundUtil.playSound("sounds\\First.wav"));
+        jButton2.addActionListener(e -> soundUtil.playSound("sounds\\Arrive.wav"));
 
         // 保存设置
         jButton.addActionListener(e -> {

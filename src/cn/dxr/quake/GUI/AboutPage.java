@@ -45,11 +45,11 @@ public class AboutPage {
         jLabel3.setForeground(Color.white);
         jLabel3.setFont(new Font("微软雅黑", Font.BOLD, 15));
         jLabel4.setBounds(20,100,460,50);
-        jLabel4.setText("四川省地震局  提供地震预警信息");
+        jLabel4.setText("成都高新减灾研究所(ICL)  提供地震预警信息");
         jLabel4.setForeground(Color.white);
         jLabel4.setFont(new Font("微软雅黑", Font.BOLD, 13));
         jLabel5.setBounds(20,120,460,50);
-        jLabel5.setText("WolfxApi  提供Api接口");
+        jLabel5.setText("chinaeew.cn  提供Api接口");
         jLabel5.setForeground(Color.white);
         jLabel5.setFont(new Font("微软雅黑", Font.BOLD, 13));
         jLabel6.setBounds(20,140,460,50);

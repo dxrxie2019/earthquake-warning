@@ -4,6 +4,7 @@ import cn.dxr.quake.Utils.DistanceUtil;
 import cn.dxr.quake.Utils.HttpUtil;
 import cn.dxr.quake.Utils.SoundUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.FileUtils;
 
@@ -25,7 +26,7 @@ public class MainWindow {
 
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.3.2");
+        JFrame jFrame = new JFrame("地震预警 v1.4.0");
         Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\icon.png");
         jFrame.setIconImage(image);
         jFrame.setSize(330, 330);
@@ -122,18 +123,24 @@ public class MainWindow {
                 File path = new File("Files\\settings.json");
                 File path1 = new File("Files\\start.json");
                 try {
-                    String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
-                    JSONObject json = JSON.parseObject(url);
-                    double epicenterLat = json.getDouble("Latitude");
-                    double epicenterLng = json.getDouble("Longitude");
+                    String url = HttpUtil.sendGet("https://mobile.chinaeew.cn", "/v1/earlywarnings?updates=&start_at=");
+                    JSONObject jsonObj = JSON.parseObject(url);
+                    JSONArray jsonArray = jsonObj.getJSONArray("data");
+                    JSONObject json = jsonArray.getJSONObject(0);
+                    double epicenterLat = json.getDouble("latitude");
+                    double epicenterLng = json.getDouble("longitude");
                     DecimalFormat decimalFormat = new DecimalFormat("0.0");
+                    SimpleDateFormat format =  new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+                    Long time = new Long(json.getString("startAt"));
+                    double maxInt = 0.24 + 1.29 * json.getDouble("magnitude");
+                    String date = format.format(time);
                     try {
                         String file = FileUtils.readFileToString(path);
                         JSONObject jsonObject = JSON.parseObject(file);
                         double userLat = jsonObject.getDouble("Lat");
                         double userlng = jsonObject.getDouble("Lng");
                         String distance = decimalFormat.format(DistanceUtil.getDistance(userlng, userLat, epicenterLng, epicenterLat));
-                        double local = 0.92 + 1.63 * json.getDouble("Magunitude") - 3.49 * Math.log10(Double.parseDouble(distance));
+                        double local = 0.92 + 1.63 * json.getDouble("magnitude") - 3.49 * Math.log10(Double.parseDouble(distance));
                         String localInt = decimalFormat.format(local);
                         if (local < 0) {
                             localInt = "0.0";
@@ -165,15 +172,15 @@ public class MainWindow {
                     String file1 = FileUtils.readFileToString(path1);
                     JSONObject jsonObject1 = JSON.parseObject(file1);
                     label.setText("  地震预警  ");
-                    label2.setText("  " + json.getString("HypoCenter") + "  M" + json.getString("Magunitude"));
-                    label3.setText("    震源深度: " + "10KM    ");
-                    label6.setText("发震时刻: " + json.getString("OriginTime"));
-                    label8.setText("最大烈度: " + json.getString("MaxIntensity") + "度");
-                    if (!Objects.equals(json.getString("ID"), jsonObject1.getString("ID"))) {
-                        if (!Objects.equals(json.getString("ID"), EventID)) {
+                    label2.setText("     " + json.getString("epicenter") + "         M" + decimalFormat.format(json.getDouble("magnitude")));
+                    label3.setText("    震源深度: " + decimalFormat.format(json.getDouble("depth")) + "KM   ");
+                    label6.setText("发震时刻: " + date);
+                    label8.setText("最大烈度: " + decimalFormat.format(maxInt) + "度");
+                    if (!Objects.equals(json.getString("eventId"), jsonObject1.getString("ID"))) {
+                        if (!Objects.equals(json.getString("eventId"), EventID)) {
                             soundUtil.playSound("sounds\\First.wav");
                             jFrame.setAlwaysOnTop(true);
-                            EventID = json.getString("ID");
+                            EventID = json.getString("eventId");
                         } else {
                             jFrame.setAlwaysOnTop(false);
                         }
@@ -212,19 +219,21 @@ public class MainWindow {
                 File path = new File("Files\\settings.json");
                 File path1 = new File("Files\\start.json");
                 try {
-                    String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
-                    JSONObject json = JSON.parseObject(url);
+                    String url = HttpUtil.sendGet("https://mobile.chinaeew.cn", "/v1/earlywarnings?updates=&start_at=");
+                    JSONObject jsonObj = JSON.parseObject(url);
+                    JSONArray jsonArray = jsonObj.getJSONArray("data");
+                    JSONObject json = jsonArray.getJSONObject(0);
                     String file = FileUtils.readFileToString(path);
                     JSONObject jsonObject = JSON.parseObject(file);
                     String file1 = FileUtils.readFileToString(path1);
                     JSONObject jsonObject1 = JSON.parseObject(file1);
-                    double epicenterLat = json.getDouble("Latitude");
-                    double epicenterLng = json.getDouble("Longitude");
+                    double epicenterLat = json.getDouble("latitude");
+                    double epicenterLng = json.getDouble("longitude");
                     double userLat = jsonObject.getDouble("Lat");
                     double userlng = jsonObject.getDouble("Lng");
                     int time = (int) DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
                     label11.setText("地震横波已抵达");
-                    if (!Objects.equals(json.getString("ID"), jsonObject1.getString("ID"))) {
+                    if (!Objects.equals(json.getString("eventId"), jsonObject1.getString("ID"))) {
                         if (!Objects.equals(json.getString("ID"), EventID)) {
                             jPanel.setBackground(new Color(128, 16, 16, 255));
                             // 倒计时
@@ -236,7 +245,7 @@ public class MainWindow {
                                 }
                                 Thread.sleep(1000L);
                             }
-                            EventID = json.getString("ID");
+                            EventID = json.getString("eventId");
                         } else {
                             jPanel.setBackground(new Color(37, 42, 37, 255));
                         }
@@ -253,12 +262,14 @@ public class MainWindow {
     public static double getArriveTime() {
         File path = new File("Files\\settings.json");
         try {
-            String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
-            JSONObject json = JSON.parseObject(url);
+            String url = HttpUtil.sendGet("https://mobile.chinaeew.cn", "/v1/earlywarnings?updates=&start_at=");
+            JSONObject jsonObj = JSON.parseObject(url);
+            JSONArray jsonArray = jsonObj.getJSONArray("data");
+            JSONObject json = jsonArray.getJSONObject(0);
             String file = FileUtils.readFileToString(path);
             JSONObject jsonObject = JSON.parseObject(file);
-            double epicenterLat = json.getDouble("Latitude");
-            double epicenterLng = json.getDouble("Longitude");
+            double epicenterLat = json.getDouble("latitude");
+            double epicenterLng = json.getDouble("longitude");
             double userLat = jsonObject.getDouble("Lat");
             double userlng = jsonObject.getDouble("Lng");
             return DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
@@ -272,17 +283,19 @@ public class MainWindow {
     public static String getFeel() {
         File path = new File("Files\\settings.json");
         try {
-            String url = HttpUtil.sendGet("https://api.wolfx.jp", "/sc_eew.json?");
-            JSONObject json = JSON.parseObject(url);
+            String url = HttpUtil.sendGet("https://mobile.chinaeew.cn", "/v1/earlywarnings?updates=&start_at=");
+            JSONObject jsonObj = JSON.parseObject(url);
+            JSONArray jsonArray = jsonObj.getJSONArray("data");
+            JSONObject json = jsonArray.getJSONObject(0);
             String file = FileUtils.readFileToString(path);
             JSONObject jsonObject = JSON.parseObject(file);
             DecimalFormat decimalFormat = new DecimalFormat("0.0");
-            double epicenterLat = json.getDouble("Latitude");
-            double epicenterLng = json.getDouble("Longitude");
+            double epicenterLat = json.getDouble("latitude");
+            double epicenterLng = json.getDouble("longitude");
             double userLat = jsonObject.getDouble("Lat");
             double userlng = jsonObject.getDouble("Lng");
             String distance = decimalFormat.format(DistanceUtil.getDistance(userlng, userLat, epicenterLng, epicenterLat));
-            double local = 0.92 + 1.63 * json.getDouble("Magunitude") - 3.49 * Math.log10(Double.parseDouble(distance));
+            double local = 0.92 + 1.63 * json.getDouble("magnitude") - 3.49 * Math.log10(Double.parseDouble(distance));
             String feel = "";
             if (local < 1) {
                 feel = "无震感";

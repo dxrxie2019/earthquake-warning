@@ -6,10 +6,11 @@ import cn.dxr.quake.Utils.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import org.apache.commons.io.FileUtils;
 
+import javax.swing.*;
 import java.awt.*;
-import java.io.File;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.Objects;
 import java.util.Timer;
@@ -19,25 +20,42 @@ public class AppTray {
 
     private static String id = null;
 
+    private static final Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\tray.png");
+
+    private static final TrayIcon trayIcon = new TrayIcon(image);
+
     public AppTray() {
         // 托盘右键菜单
-        PopupMenu PopupMenu = new PopupMenu();
-        MenuItem menuItem = new MenuItem();
-        menuItem.setLabel("Exit");
-        menuItem.addActionListener(e -> System.exit(1));
-        MenuItem menuItem1 = new MenuItem();
-        menuItem1.setLabel("Settings");
-        menuItem1.addActionListener(e -> new SettingsPage());
-        PopupMenu.add(menuItem);
-        PopupMenu.add(menuItem1);
+        JDialog jDialog = new JDialog();
+        jDialog.setUndecorated(true);
+        jDialog.setSize(1,1);
+        JPopupMenu jPopupMenu = new JPopupMenu();
+        JMenuItem jmenuItem = new JMenuItem("设置");
+        jmenuItem.addActionListener(e -> new SettingsPage());
+        JMenuItem jmenuItem2 = new JMenuItem("显示主窗口");
+        jmenuItem2.addActionListener(e -> MainWindow.show());
+        JMenuItem jmenuItem1 = new JMenuItem("退出程序");
+        jmenuItem1.addActionListener(e -> System.exit(1));
+        jPopupMenu.add(jmenuItem);
+        jPopupMenu.add(jmenuItem2);
+        jPopupMenu.add(jmenuItem1);
 
         // 系统托盘
         if (SystemTray.isSupported()) {
             SystemTray systemTray = SystemTray.getSystemTray();
-            Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\tray.png");
-            TrayIcon trayIcon = new TrayIcon(image);
             trayIcon.setToolTip("地震预警 by dxr");
-            trayIcon.setPopupMenu(PopupMenu);
+            trayIcon.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (e.getButton() == MouseEvent.BUTTON3) {
+                        jDialog.setLocation(e.getX(),e.getY());
+                        jDialog.setVisible(true);
+                        jPopupMenu.show(jDialog,0,0);
+                    } else if (e.getButton() == MouseEvent.BUTTON1) {
+                        MainWindow.show();
+                    }
+                }
+            });
             try {
                 systemTray.add(trayIcon);
             } catch (AWTException e) {
@@ -63,7 +81,7 @@ public class AppTray {
                             String mag = json.getString("magnitude");
                             String depth = json.getString("depth");
                             double maxInt = 0.24 + 1.29 * json.getDouble("magnitude");
-                            trayIcon.displayMessage("中国地震台网" + type,time + "在" + region + "(北纬" + lat + "度,东经" + lng + "度)" + "发生" + mag + "级地震,震源深度" + depth +"公里,预估最大烈度" + decimalFormat.format(maxInt) + "度",TrayIcon.MessageType.INFO);
+                            showMessage("中国地震台网" + type,time + "在" + region + "(北纬" + lat + "度,东经" + lng + "度)" + "发生" + mag + "级地震,震源深度" + depth +"公里,预估最大烈度" + decimalFormat.format(maxInt) + "度");
                             id = json.getString("id");
                         }
                     } catch (Exception e) {
@@ -72,35 +90,9 @@ public class AppTray {
                 }
             };
             new Timer().schedule(timerTask,0L,7000L);
-
-            // 创建另一个定时任务用于地震预警提醒
-            TimerTask timerTask1 = new TimerTask() {
-                @Override
-                public void run() {
-                    File path = new File("Files\\start.json");
-                    try {
-                        String url = HttpUtil.sendGet("https://mobile.chinaeew.cn", "/v1/earlywarnings?updates=&start_at=");
-                        JSONObject jsonObj = JSON.parseObject(url);
-                        JSONArray jsonArray = jsonObj.getJSONArray("data");
-                        JSONObject json = jsonArray.getJSONObject(0);
-                        String file = FileUtils.readFileToString(path);
-                        JSONObject jsonObject = JSON.parseObject(file);
-                        if (!Objects.equals(json.getString("eventId"), jsonObject.getString("ID"))) {
-                            if (!Objects.equals(json.getString("eventId"), id)) {
-                                DecimalFormat decimalFormat = new DecimalFormat("0.0");
-                                String mag = json.getString("Magunitude");
-                                String feel = MainWindow.getFeel();
-                                double time = Double.parseDouble(decimalFormat.format(MainWindow.getArriveTime()));
-                                trayIcon.displayMessage("现正发生有感地震",mag + "级地震," + time + "秒后抵达\n" + "您所在的地区将" + feel + ",请合理避险!",TrayIcon.MessageType.INFO);
-                                id = json.getString("eventId");
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-            new Timer().schedule(timerTask1,0L,3000L);
         }
+    }
+    public static void showMessage(String title,String message) {
+        trayIcon.displayMessage(title,message,TrayIcon.MessageType.INFO);
     }
 }

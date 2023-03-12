@@ -33,6 +33,7 @@ public class SettingsPage {
         JLabel jLabel3 = new JLabel();
         JLabel jLabel4 = new JLabel();
         JLabel jLabel5 = new JLabel();
+        JLabel jLabel6 = new JLabel();
         jLabel.setBounds(0,0,250,50);
         jLabel.setText("-----用户所在地经纬度设置-----");
         jLabel.setForeground(Color.white);
@@ -64,7 +65,7 @@ public class SettingsPage {
         JButton jButton = new JButton("保存设置");
         JButton jButton1 = new JButton("试听");
         JButton jButton2 = new JButton("试听");
-        jButton.setBounds(110,220,150,30);
+        jButton.setBounds(120,230,150,30);
         jButton.setFont(new Font("微软雅黑", Font.BOLD, 15));
         jButton.setFocusPainted(false);
         jButton1.setBounds(120,110,70,20);
@@ -81,6 +82,7 @@ public class SettingsPage {
         jPanel.add(jLabel3);
         jPanel.add(jLabel4);
         jPanel.add(jLabel5);
+        jPanel.add(jLabel6);
         jPanel.add(jEditorPane);
         jPanel.add(jEditorPane1);
         jPanel.add(jButton);
@@ -111,8 +113,8 @@ public class SettingsPage {
         jButton.addActionListener(e -> {
             try {
                 JSONObject jsonObject1 = new JSONObject();
-                jsonObject1.put("Lat", jEditorPane.getText());
-                jsonObject1.put("Lng", jEditorPane1.getText());
+                jsonObject1.put("Lat",jEditorPane.getText());
+                jsonObject1.put("Lng",jEditorPane1.getText());
                 BufferedWriter bufferedWriter;
                 bufferedWriter = new BufferedWriter(new FileWriter("Files\\settings.json"));
                 bufferedWriter.write(jsonObject1.toString());

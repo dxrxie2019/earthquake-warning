@@ -3,6 +3,7 @@ package cn.dxr.quake.GUI;
 import cn.dxr.quake.Utils.DistanceUtil;
 import cn.dxr.quake.Utils.HttpUtil;
 import cn.dxr.quake.Utils.SoundUtil;
+import cn.dxr.quake.app.AppTray;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -24,14 +25,16 @@ public class MainWindow {
 
     private static String EventID = null;
 
+    private static final JFrame jFrame = new JFrame();
+
     public MainWindow() {
         // 定义程序窗口及控件属性
-        JFrame jFrame = new JFrame("地震预警 v1.4.0");
+        jFrame.setTitle("地震预警 v1.4.2");
         Image image = Toolkit.getDefaultToolkit().getImage("Files\\img\\icon.png");
         jFrame.setIconImage(image);
         jFrame.setSize(330, 330);
         jFrame.setLocationRelativeTo(null);
-        jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jFrame.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
         jFrame.setVisible(true);
         jFrame.setLayout(new GridLayout());
         jFrame.setResizable(false);
@@ -90,15 +93,15 @@ public class MainWindow {
 
         // 右键菜单
         JPopupMenu jPopupMenu = new JPopupMenu();
-        JMenuItem jMenuItem = new JMenuItem("退出程序");
+        JMenuItem jMenuItem = new JMenuItem("关于");
         jMenuItem.setFont(new Font("微软雅黑",Font.BOLD,12));
-        jMenuItem.addActionListener(e -> System.exit(1));
+        jMenuItem.addActionListener(e -> new AboutPage());
         JMenuItem jMenuItem1 = new JMenuItem("设置");
         jMenuItem1.setFont(new Font("微软雅黑",Font.BOLD,12));
         jMenuItem1.addActionListener(e -> new SettingsPage());
-        JMenuItem jMenuItem2 = new JMenuItem("关于");
+        JMenuItem jMenuItem2 = new JMenuItem("退出程序");
         jMenuItem2.setFont(new Font("微软雅黑",Font.BOLD,12));
-        jMenuItem2.addActionListener(e -> new AboutPage());
+        jMenuItem2.addActionListener(e -> System.exit(1));
         jPopupMenu.add(jMenuItem);
         jPopupMenu.add(jMenuItem1);
         jPopupMenu.add(jMenuItem2);
@@ -108,7 +111,7 @@ public class MainWindow {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getButton() == MouseEvent.BUTTON3) {
-                    jPopupMenu.show(jFrame, e.getX(), e.getY());
+                    jPopupMenu.show(jFrame,e.getX(),e.getY());
                 }
             }
         });
@@ -133,6 +136,7 @@ public class MainWindow {
                     SimpleDateFormat format =  new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
                     Long time = new Long(json.getString("startAt"));
                     double maxInt = 0.24 + 1.29 * json.getDouble("magnitude");
+                    double arriveTime = Double.parseDouble(decimalFormat.format(getArriveTime()));
                     String date = format.format(time);
                     try {
                         String file = FileUtils.readFileToString(path);
@@ -180,6 +184,8 @@ public class MainWindow {
                         if (!Objects.equals(json.getString("eventId"), EventID)) {
                             soundUtil.playSound("sounds\\First.wav");
                             jFrame.setAlwaysOnTop(true);
+                            jFrame.setVisible(true);
+                            AppTray.showMessage("现正发生有感地震",decimalFormat.format(json.getDouble("magnitude")) + "级地震," + arriveTime + "秒后抵达\n" + "您所在的地区将" + getFeel() + ",请合理避险!");
                             EventID = json.getString("eventId");
                         } else {
                             jFrame.setAlwaysOnTop(false);
@@ -234,7 +240,7 @@ public class MainWindow {
                     int time = (int) DistanceUtil.getTime(userlng, userLat, epicenterLng, epicenterLat);
                     label11.setText("地震横波已抵达");
                     if (!Objects.equals(json.getString("eventId"), jsonObject1.getString("ID"))) {
-                        if (!Objects.equals(json.getString("ID"), EventID)) {
+                        if (!Objects.equals(json.getString("eventId"), EventID)) {
                             jPanel.setBackground(new Color(128, 16, 16, 255));
                             // 倒计时
                             for (int i = time; i > -1; i--) {
@@ -321,4 +327,8 @@ public class MainWindow {
         }
         return null;
     }
+    public static void show() {
+        jFrame.setVisible(true);
+    }
 }
+
